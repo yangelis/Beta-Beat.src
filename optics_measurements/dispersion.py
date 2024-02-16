@@ -100,9 +100,11 @@ def _calculate_dispersion(model, input_files, plane, header, unit, cut, output, 
 
 def _calculate_normalised_dispersion(model, input_files, beta, header, unit, cut, output, accelerator):
     #TODO there are no errors from orbit
-    df_orbit = pd.DataFrame(model).loc[:, ['S', 'MUX', 'DPX', 'DX', 'X', 'BETX']]
+    df_orbit = pd.DataFrame(model).loc[:, ['S', 'MUX', 'DPX', 'DX', 'X', 'BETX', 'MUY', 'DPY', 'DY', 'Y', 'BETY']]
     df_orbit['NDXMDL'] = df_orbit.loc[:, 'DX'] / np.sqrt(df_orbit.loc[:, 'BETX'])
+    df_orbit['NDYMDL'] = df_orbit.loc[:, 'DY'] / np.sqrt(df_orbit.loc[:, 'BETY']) # Why only X plane here???
     df_orbit.rename(columns={'MUX': 'MUXMDL', 'DPX': 'DPXMDL', 'DX': 'DXMDL', 'X': 'XMDL'}, inplace=True)
+    df_orbit.rename(columns={'MUY': 'MUYMDL', 'DPY': 'DPYMDL', 'DY': 'DYMDL', 'Y': 'YMDL'}, inplace=True)
     df_orbit['COUNT'] = len(input_files.get_columns(df_orbit, 'CO'))
     dpps = input_files.dpps("X")
     df_orbit = pd.merge(df_orbit, input_files.joined_frame("X", ['CO', 'CORMS', 'AMPX']),
@@ -124,8 +126,33 @@ def _calculate_normalised_dispersion(model, input_files, beta, header, unit, cut
     df_orbit['STDDX'] = df_orbit.loc[:, 'STDNDX'] * np.sqrt(df_orbit.loc[:, 'BETX_phase'])
     df_orbit['DPX'] = _calculate_dp(model, df_orbit.loc[:, ['DX', 'STDDX']], "X")
     df_orbit['DELTANDX'] = df_orbit.loc[:, 'NDX'] - df_orbit.loc[:, 'NDXMDL']
+
+    dpps = input_files.dpps("Y")
+    df_orbit = pd.merge(df_orbit, input_files.joined_frame("Y", ['CO', 'CORMS', 'AMPY']),
+                        how='inner', left_index=True, right_index=True)
+    df_orbit = pd.merge(df_orbit, beta.loc[:, ['BETY', 'ERRBETY']], how='inner', left_index=True,
+                        right_index=True, suffixes=('', '_phase'))
+    if np.max(dpps) - np.min(dpps) == 0.0:
+        return  # temporary solution
+        # raise ValueError('Cannot calculate dispersion, only a single dpoverp')
+    fit = np.polyfit(dpps, SCALES[unit] * input_files.get_data(df_orbit, 'CO').T, 1, cov=True)
+    df_orbit['NDY_unscaled'] = fit[0][-2, :].T / stats.weighted_mean(input_files.get_data(df_orbit, 'AMPY'), axis=1) # TODO there is no error from AMPX
+    df_orbit['STDNDY_unscaled'] = np.sqrt(fit[1][-2, -2, :].T) / stats.weighted_mean(input_files.get_data(df_orbit, 'AMPY'), axis=1)
+    df_orbit = df_orbit.loc[np.abs(fit[0][-1, :].T) < cut * SCALES[unit], :]
+    mask = accelerator.get_element_types_mask(df_orbit.index, ["arc_bpm"])
+    global_factor = np.sum(df_orbit.loc[mask, 'NDYMDL'].values) / np.sum(df_orbit.loc[mask, 'NDY_unscaled'].values)
+    df_orbit['NDY'] = global_factor * df_orbit.loc[:, 'NDY_unscaled']
+    df_orbit['STDNDY'] = global_factor * df_orbit.loc[:, 'STDNDY_unscaled']
+    df_orbit['DY'] = df_orbit.loc[:, 'NDY'] * np.sqrt(df_orbit.loc[:, 'BETY_phase'])
+    df_orbit['STDDY'] = df_orbit.loc[:, 'STDNDY'] * np.sqrt(df_orbit.loc[:, 'BETY_phase'])
+    df_orbit['DPY'] = _calculate_dp(model, df_orbit.loc[:, ['DY', 'STDDY']], "Y")
+    df_orbit['DELTANDY'] = df_orbit.loc[:, 'NDY'] - df_orbit.loc[:, 'NDYMDL']
+
+
     output_df = df_orbit.loc[:, ['S', 'COUNT', 'NDX', 'STDNDX', 'DX', 'DPX',
-                                 'NDXMDL', 'DXMDL', 'DPXMDL', 'MUXMDL', 'DELTANDX']]
+                                 'NDXMDL', 'DXMDL', 'DPXMDL', 'MUXMDL', 'DELTANDX',
+                                 'NDY', 'STDNDY', 'DY', 'DPY',
+                                 'NDYMDL', 'DYMDL', 'DPYMDL', 'MUYMDL', 'DELTANDY']]
     tfs_pandas.write_tfs(join(output, header['FILENAME']), output_df, header, save_index='NAME')
     return output_df
 
