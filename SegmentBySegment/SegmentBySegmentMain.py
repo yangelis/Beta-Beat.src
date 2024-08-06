@@ -1306,7 +1306,7 @@ def getAndWriteData(
     if element_has_dispersion and betaphase:
         # do not output dispersion if it is not beta phase, would overwrite already existing files with the same numbers 
         sbs_dispersion_writer.write_dispersion(element_name, is_element,
-                                                           input_data.dispersion_x, input_data.dispersion_y, input_data.normalized_dispersion_x,
+                                                           input_data.dispersion_x, input_data.dispersion_y, input_data.normalized_dispersion_x, input_data.normalized_dispersion_y,
                                                            input_model,
                                                            propagated_models, save_path, disp_summary)
     if element_has_coupling and betaphase:
@@ -1740,13 +1740,15 @@ class _InputData(object):
             return False
 
     def __try_to_load_dispersion_files(self):
-        if _all_exists_in_output_path("getDx.out", "getNDx.out", "getDy.out"):
+        if _all_exists_in_output_path("getDx.out", "getNDx.out", "getDy.out", "getNDy.out"):
             self.dispersion_x = self.__try_to_load_twiss_from_output("getDx.out")
             self.normalized_dispersion_x = self.__try_to_load_twiss_from_output("getNDx.out")
             self.dispersion_y = self.__try_to_load_twiss_from_output("getDy.out")
+            self.normalized_dispersion_y = self.__try_to_load_twiss_from_output("getNDy.out")
             return (not self.dispersion_x is None and
                     not self.normalized_dispersion_x is None and
-                    not self.dispersion_y is None)
+                    not self.dispersion_y is None and
+                    not self.normalized_dispersion_y is None)
         else:
             return False
 

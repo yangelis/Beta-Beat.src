@@ -8,7 +8,7 @@ from SegmentBySegment.sbs_writers.sbs_beta_writer import intersect, weighted_ave
 from tfs_files import tfs_file_writer
 
 
-def write_dispersion(element_name, is_element, measured_hor_disp, measured_ver_disp, measured_norm_disp, input_model, propagated_models, save_path, dispersion_summary_file):
+def write_dispersion(element_name, is_element, measured_hor_disp, measured_ver_disp, measured_norm_hor_disp, measured_norm_ver_disp, input_model, propagated_models, save_path, dispersion_summary_file):
     file_disp_x, file_norm_disp_x, file_disp_y, file_norm_disp_y = _get_dispersion_tfs_files(element_name, is_element, save_path)
 
     model_propagation = propagated_models.propagation
@@ -27,7 +27,7 @@ def write_dispersion(element_name, is_element, measured_hor_disp, measured_ver_d
                                                  input_model,
                                                  model_cor, model_propagation, model_back_propagation, model_back_cor, is_element)
 
-    summary_data_nx = _write_normalized_hor_dispersion(file_norm_disp_x, element_name, bpms_list_x, measured_norm_disp,
+    summary_data_nx = _write_normalized_hor_dispersion(file_norm_disp_x, element_name, bpms_list_x, measured_norm_hor_disp,
                                                        input_model,
                                                        model_cor, model_propagation, model_back_propagation, model_back_cor, is_element)
 
@@ -35,7 +35,7 @@ def write_dispersion(element_name, is_element, measured_hor_disp, measured_ver_d
                                                  input_model,
                                                  model_cor, model_propagation, model_back_propagation, model_back_cor, is_element)
 
-    summary_data_ny = _write_normalized_ver_dispersion(file_norm_disp_y, element_name, bpms_list_y, measured_norm_disp,
+    summary_data_ny = _write_normalized_ver_dispersion(file_norm_disp_y, element_name, bpms_list_y, measured_norm_ver_disp,
                                                        input_model,
                                                        model_cor, model_propagation, model_back_propagation, model_back_cor, is_element)
 
@@ -49,12 +49,14 @@ def get_dispersion_summary_file(save_path):
                                                   "DXPROP", "DXPROPERR", "DPXPROP", "DPXPROPERR",
                                                   "DYPROP", "DYPROPERR", "DPYPROP", "DPYPROPERR",
                                                   "NDXPROP", "NDXPROPERR",
-                                                  "DXMODEL", "DYMODEL", "NDXMODEL", "DPXMODEL", "DYPMODEL", "MODEL_S"])
+                                                  "NDYPROP", "NDYPROPERR",
+                                                  "DXMODEL", "DYMODEL", "NDXMODEL", "NDYMODEL", "DPXMODEL", "DPYMODEL", "MODEL_S"])
         dispersion_summary_file.add_column_datatypes(["%s", "%le",
                                                       "%le", "%le", "%le", "%le",
                                                       "%le", "%le", "%le", "%le",
                                                       "%le", "%le",
-                                                      "%le", "%le", "%le", "%le", "%le", "%le"])
+                                                      "%le", "%le",
+                                                      "%le", "%le", "%le", "%le", "%le", "%le", "%le"])
         return dispersion_summary_file
 
 
@@ -64,7 +66,7 @@ def _write_summary_data(dispersion_summary_file, summary_data_x, summary_data_nx
                                            summary_data_y[2], summary_data_y[3], summary_data_y[4], summary_data_y[5],
                                            summary_data_nx[0], summary_data_nx[1],
                                            summary_data_ny[0], summary_data_ny[1],
-                                           summary_data_x[6], summary_data_y[6], summary_data_nx[2], summary_data_x[7], summary_data_y[7], summary_data_x[8]])
+                                           summary_data_x[6], summary_data_y[6], summary_data_nx[2], summary_data_ny[2], summary_data_x[7], summary_data_y[7], summary_data_x[8]])
 
 
 def _get_dispersion_tfs_files(element_name, is_element, save_path):
@@ -111,7 +113,7 @@ def _get_dispersion_tfs_files(element_name, is_element, save_path):
                                           "%le", "%le", "%le"])
 
         file_norm_disp_y.add_column_names(["NAME", "S",
-                                           "NDYPROP", "NDYPROPERR", "NDYCOR", "NDUCORERR",
+                                           "NDYPROP", "NDYPROPERR", "NDYCOR", "NDYCORERR",
                                            "NDYBACK", "NDYBACKERR", "NDYBACKCOR", "NDYBACKCORERR",
                                            "NDYMODEL", "MODEL_S"])
         file_norm_disp_y.add_column_datatypes(["%s", "%le",
@@ -310,7 +312,7 @@ def _write_normalized_ver_dispersion(file_norm_disp_y, element_name, bpms_list, 
             back_corr_norm_disp_diff = back_corr_norm_disp - back_prop_norm_disp
             err_back_corr_norm_disp = 1e-8  # TODO: Propagate
 
-            file_norm_disp_Y.add_table_row([bpm_name, bpm_s, norm_disp_diff, prop_norm_disp_err, corr_norm_disp_diff, err_corr_norm_disp, back_norm_disp_diff, back_prop_norm_disp_err, back_corr_norm_disp_diff, err_back_corr_norm_disp, model_norm_disp, model_s])
+            file_norm_disp_y.add_table_row([bpm_name, bpm_s, norm_disp_diff, prop_norm_disp_err, corr_norm_disp_diff, err_corr_norm_disp, back_norm_disp_diff, back_prop_norm_disp_err, back_corr_norm_disp_diff, err_back_corr_norm_disp, model_norm_disp, model_s])
         else:
             model_s = input_model.S[input_model.indx[bpm_name]]
             model_norm_disp = input_model.DY[input_model.indx[bpm_name]] / sqrt(input_model.BETY[input_model.indx[bpm_name]])
