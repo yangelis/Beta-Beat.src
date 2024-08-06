@@ -732,6 +732,7 @@ def _create_tfs_files(getllm_d, model_filename, nonlinear):
     files_dict['getCOx.out'] = GetllmTfsFile('getCOx.out')
     files_dict['getCOy.out'] = GetllmTfsFile('getCOy.out')
     files_dict['getNDx.out'] = GetllmTfsFile('getNDx.out')
+    files_dict['getNDy.out'] = GetllmTfsFile('getNDy.out')
     files_dict['getDx.out'] = GetllmTfsFile('getDx.out')
     files_dict['getDy.out'] = GetllmTfsFile('getDy.out')
     files_dict['getcouple.out'] = GetllmTfsFile('getcouple.out')
@@ -902,6 +903,7 @@ def _analyse_src_files(getllm_d, twiss_d, files_to_analyse, nonlinear, turn_by_t
                 files_dict['getbetay.out'].add_filename_to_getllm_header(file_y)
                 files_dict['getampbetay.out'].add_filename_to_getllm_header(file_y)
                 files_dict['getCOy.out'].add_filename_to_getllm_header(file_y)
+                files_dict['getNDy.out'].add_filename_to_getllm_header(file_y)
                 files_dict['getDy.out'].add_filename_to_getllm_header(file_y)
                 if getllm_d.with_ac_calc:
                     files_dict['getphasey_free.out'].add_filename_to_getllm_header(file_y)
@@ -914,6 +916,7 @@ def _analyse_src_files(getllm_d, twiss_d, files_to_analyse, nonlinear, turn_by_t
                     files_dict['getampbetay_free2.out'].add_filename_to_getllm_header(file_y)
             else:
                 twiss_d.non_zero_dpp_y.append(twiss_file_y)
+                files_dict['getNDy.out'].add_filename_to_getllm_header(file_y)
                 files_dict['getDy.out'].add_filename_to_getllm_header(file_y)
 
     if not twiss_d.has_zero_dpp_x():
@@ -940,6 +943,7 @@ def _analyse_src_files(getllm_d, twiss_d, files_to_analyse, nonlinear, turn_by_t
             files_dict['getbetay.out'].add_filename_to_getllm_header("chrommode")
             files_dict['getampbetay.out'].add_filename_to_getllm_header("chrommode")
             files_dict['getCOx.out'].add_filename_to_getllm_header("chrommode")
+            files_dict['getNDy.out'].add_filename_to_getllm_header("chrommode")
             files_dict['getDy.out'].add_filename_to_getllm_header("chrommode")
 
     if twiss_d.has_no_input_files():
